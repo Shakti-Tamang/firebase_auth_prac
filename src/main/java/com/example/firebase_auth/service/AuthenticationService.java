@@ -2,10 +2,7 @@ package com.example.firebase_auth.service;
 
 
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.crypto.password.PasswordEncoder;
+
 import org.springframework.stereotype.Service;
 
 import com.example.firebase_auth.ApiResponse.ApiResponse;
@@ -25,86 +22,68 @@ import com.google.firebase.auth.FirebaseToken;
 
 import jakarta.validation.Valid;
 
+
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class AuthenticationService {
 
     private final UserReposiitory userReposiitory;
-    // private final JwtService jwtService;
     private final RoleRepository roleRepository;
-    private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
-        private final FirebaseAuthService firebaseAuthService;
+    private final FirebaseAuthService firebaseAuthService;
 
-    public AuthenticationService(UserReposiitory userReposiitory,
-            RoleRepository roleRepository, PasswordEncoder passwordEncoder,
-
-            AuthenticationManager authenticationManager,FirebaseAuthService firebaseAuthService) {
-        this.userReposiitory = userReposiitory;
-
-        this.roleRepository = roleRepository;
-        this.authenticationManager = authenticationManager;
-        this.passwordEncoder = passwordEncoder;
-        this.firebaseAuthService=firebaseAuthService;
-    }
-
-    public ApiResponse register(@Valid RegisterUserDto registerTeacherDto) {
-        Role role = roleRepository.findByRole(RoleEnum.valueOf(registerTeacherDto.getRole()));
+    public ApiResponse register(@Valid RegisterUserDto registerUserDto) {
+        Role role = roleRepository.findByRole(RoleEnum.valueOf(registerUserDto.getRole()));
         if (role == null) {
-            throw new RuntimeException("Role not found: " + registerTeacherDto.getRole());
+            throw new RuntimeException("Role not found: " + registerUserDto.getRole());
         }
-        String contact = "+977" + registerTeacherDto.getContactNumber();
-              try {
-            firebaseAuthService.createFirebaseUser(registerTeacherDto.getEmail(), registerTeacherDto.getPassword());
+
+        String contact = "+977" + registerUserDto.getContactNumber();
+        
+        try {
+            firebaseAuthService.createFirebaseUser(registerUserDto.getEmail(), registerUserDto.getPassword());
         } catch (FirebaseAuthException e) {
             throw new RuntimeException("Failed to create Firebase user: " + e.getMessage());
         }
 
-        System.out.println("Role = " + registerTeacherDto.getRole());
-
-        UserModel teachers = UserModel.builder()
-                .name(registerTeacherDto.getName())
+        // Create user in local database
+        UserModel user = UserModel.builder()
+                .name(registerUserDto.getName())
                 .phone(contact)
-                .email(registerTeacherDto.getEmail())
-                .roleName(registerTeacherDto.getRole())
-                .password(passwordEncoder.encode(registerTeacherDto.getPassword()))
-                .role(role).build();
-        userReposiitory.save(teachers);
-        UserDetails userDetails = org.springframework.security.core.userdetails.User
-    .withUsername(teachers.getEmail())
-    .password(teachers.getPassword())
-    .authorities(teachers.getRoleName())
-    .build();
-        // var refreshToken = jwtService.generateRefresh(new HashMap<>(), teachers);
+                .email(registerUserDto.getEmail())
+                .roleName(registerUserDto.getRole())
+                .password("") // No password for Firebase users
+                .role(role)
+                .build();
+        
+        userReposiitory.save(user);
 
         return ApiResponse.builder()
-                // .refreshToken(refreshToken)
+                .message("User registered successfully with Firebase")
+                .statusCode(HttpStatus.OK.value())
                 .build();
-
     }
 
-
-          // NEW: Firebase Email/Password Login
     public ApiResponse firebaseLogin(FirebaseLoginRequest firebaseRequest) {
-        // FIXED: Remove FirebaseAuthService. prefix
         FirebaseSignInResponse firebaseResponse = 
             firebaseAuthService.loginWithEmailPassword(firebaseRequest.getEmail(), firebaseRequest.getPassword());
         
         // Get or create user in your database
         UserModel user = userReposiitory.findByEmail(firebaseRequest.getEmail());
         if (user == null) {
-            // Create user from Firebase
+            // Create user from Firebase with default role
             try {
                 FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(firebaseResponse.idToken());
-                user = firebaseAuthService.createOrUpdateUserFromFirebase(decodedToken);
+                user = firebaseAuthService.createOrUpdateUserFromFirebase(decodedToken, "USER");
             } catch (FirebaseAuthException e) {
                 throw new RuntimeException("Failed to verify Firebase token: " + e.getMessage());
             }
         }
 
-
-        
         return ApiResponse.builder()
                 .statusCode(HttpStatus.OK.value())
+                .message("Login successful")
                 .firebaseToken(firebaseResponse.idToken())
                 .refreshToken(firebaseResponse.refreshToken())
                 .role(user.getRoleName())
@@ -113,9 +92,7 @@ public class AuthenticationService {
                 .build();
     }
 
-    // NEW: Refresh Firebase Token
     public ApiResponse refreshFirebaseToken(FirebaseTokenRefreshRequest refreshRequest) {
-        // FIXED: Remove FirebaseAuthService. prefix
         RefreshTokenResponse refreshResponse = 
             firebaseAuthService.exchangeRefreshToken(refreshRequest.getRefreshToken());
         
@@ -126,16 +103,18 @@ public class AuthenticationService {
                 .build();
     }
 
-    // NEW: Verify Firebase ID Token
     public ApiResponse verifyFirebaseToken(FirebaseIdTokenRequest tokenRequest) {
         try {
             FirebaseToken decodedToken = firebaseAuthService.verifyIdToken(tokenRequest.getIdToken());
-            UserModel user = firebaseAuthService.createOrUpdateUserFromFirebase(decodedToken);
+            UserModel user = userReposiitory.findByEmail(decodedToken.getEmail());
             
- 
+            if (user == null) {
+                user = firebaseAuthService.createOrUpdateUserFromFirebase(decodedToken, "USER");
+            }
             
             return ApiResponse.builder()
                     .statusCode(HttpStatus.OK.value())
+                    .message("Token verified successfully")
                     .role(user.getRoleName())
                     .userId(user.getId())
                     .firebaseUid(decodedToken.getUid())
