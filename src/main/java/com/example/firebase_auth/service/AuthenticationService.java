@@ -85,7 +85,6 @@ public class AuthenticationService {
                 .statusCode(HttpStatus.OK.value())
                 .message("Login successful")
                 .firebaseToken(firebaseResponse.idToken())
-                .refreshToken(firebaseResponse.refreshToken())
                 .role(user.getRoleName())
                 .userId(user.getId())
                 .firebaseUid(firebaseResponse.localId())
