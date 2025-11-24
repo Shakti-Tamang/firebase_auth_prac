@@ -1,7 +1,7 @@
 Firebase Authentication Spring Boot Application
 A secure Spring Boot application with Firebase Authentication, role-based authorization, and RESTful APIs.
 
- Features
+🚀 Features
 Firebase Authentication - Email/password authentication using Firebase
 
 Role-Based Access Control - ADMIN and USER roles with proper authorization
@@ -14,7 +14,7 @@ Docker Support - Containerized deployment
 
 Swagger Documentation - API documentation available at /swagger-ui.html
 
- Tech Stack
+🛠️ Tech Stack
 Backend: Spring Boot 3.x, Spring Security, Spring Data JPA
 
 Authentication: Firebase Auth
@@ -27,7 +27,7 @@ API Documentation: SpringDoc OpenAPI 3
 
 Build Tool: Maven
 
- Prerequisites
+📋 Prerequisites
 Java 17 or higher
 
 Maven 3.6+
@@ -38,7 +38,7 @@ Firebase Project
 
 Docker (optional)
 
- Setup Instructions
+🔧 Setup Instructions
 1. Firebase Configuration
 Create Firebase Project
 Go to Firebase Console
@@ -211,7 +211,7 @@ java
 public ResponseEntity<?> getAllUsers() {
     // Admin-only logic
 }
- Security Configuration
+🔐 Security Configuration
 The application uses Firebase Authentication with Spring Security:
 
 Security Flow:
