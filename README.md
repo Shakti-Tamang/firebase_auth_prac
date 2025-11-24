@@ -226,6 +226,3 @@ Roles/Authorities are set in Spring Security context
 Access control is enforced based on roles
 
 Role Hierarchy:
-ADMIN: Full access to all endpoints
-
-USER: Access to user-specific endpoints
