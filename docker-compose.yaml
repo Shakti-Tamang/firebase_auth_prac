@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: rms_backend
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Shakti
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    command: postgres -c ssl=off
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8089:8089"   # match the Spring Boot server.port
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/rms_backend
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: Shakti
+    depends_on:
+      - postgres
+
+volumes:
+  postgres_data:
