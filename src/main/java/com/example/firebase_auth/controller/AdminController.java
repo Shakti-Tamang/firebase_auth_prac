@@ -15,4 +15,11 @@ public class AdminController {
         return "success hlo";
     }
 
+          @GetMapping("/getAdmin")
+    public String testGet(){
+
+        
+        return "success hlo";
+    }
+
 }
