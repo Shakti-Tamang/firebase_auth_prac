@@ -43,7 +43,7 @@ public class SwaggerConfig {
     public GroupedOpenApi publicApi() {
         return GroupedOpenApi.builder()
                 .group("Auth Setup")
-                .packagesToScan("com.example.auth.controller")
+                .packagesToScan("com.example.firebase_authcontroller")
                 .pathsToMatch("/api/**")
                 .build();
     }
