@@ -1,5 +1,7 @@
 package com.example.firebase_auth.controller;
 
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -25,12 +27,23 @@ public class AdminController {
         return "success hlo";
     }
 
-          @GetMapping("/getAdmin")
+        @GetMapping("/getAdmin")
     public UserModel testGet(@RequestParam("id") int id){
 
         UserModel user=userReposiitory.findById(id).orElse(null);
         
         return user;
+    }
+
+              @GetMapping("/user-info")
+    public ResponseEntity<String> getUserInfo() {
+
+        String userId = (String) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
+
+        return ResponseEntity.ok("Access granted. Firebase User ID = " + userId);
     }
 
 }
